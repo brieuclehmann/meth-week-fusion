@@ -27,7 +27,14 @@ normal_mean_posterior <- function(obs_data, obs_cov, prior_mean, prior_cov) {
 
 consensus_combine <- function(shard_samples, shard_vars) {
   
+  n_shards <- ncol(shard_samples)
   total_var <- apply(shard_vars, c(1, 2), sum)
   
+  weighted_samples <- array(NA, dim(shard_samples))
+  for (s in seq(n_shards)) {
+    weighted_samples[ ,s] <- shard_vars[ , ,s] %*% shard_samples[ ,s]
+  }
   
+  sum_weighted_samples <- rowSums(weighted_samples)
+  solve(total_var) %*% sum_weighted_samples
 }
