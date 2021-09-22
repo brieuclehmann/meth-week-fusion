@@ -34,7 +34,7 @@ normal_mean_posterior <- function(obs_data, obs_cov, prior_mean, prior_cov) {
 
 
 #' @param shard_samples A p x s matrix of samples, one column per shard.
-#' @param shard_vars An p x p x s array of shard covariance matrices.
+#' @param shard_vars An p x p x s array of shard precision matrices.
 
 consensus_combine <- function(shard_samples, shard_vars) {
   
