@@ -55,4 +55,11 @@ mu_X_param_list = lapply(X_grouped, draw_posterior_parameters_mean)
 
 source("pairing.R")
 
-M = pairwise_square_distances(unlist(mu_X_param_list))
+D = pairwise_square_distances(unlist(mu_X_param_list))
+indices_pairs_list = greedy_pairs(D)
+
+merge <- function(indices){
+        (c(X_grouped[[indices[1]]], X_grouped[[indices[2]]]))
+}
+
+X_grouped <- lapply(indices_pairs_list, merge)
