@@ -52,3 +52,7 @@ X_grouped = lapply(grps, select_indices)
 mu_X_list = lapply(X_grouped, draw_posterior_sample)
 
 mu_X_param_list = lapply(X_grouped, draw_posterior_parameters_mean)
+
+source("pairing.R")
+
+M = pairwise_square_distances(unlist(mu_X_param_list))

@@ -2,7 +2,7 @@ points = c(1, 3, 6, 10, 15) # example 'data set'
 
 pairwise_square_distances <- function(v){ # example 'distance matrix'
   n <- length(v)
-  M <- matrix(nrow = 5, ncol = 5) 
+  M <- matrix(nrow = n, ncol = n) 
   for (i in 1:n) {
     for (j in 1:n) {
       M[i, j] <- (v[i] - v[j])^2
