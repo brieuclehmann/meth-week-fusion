@@ -10,12 +10,23 @@ normal_mean_posterior <- function(obs_data, obs_cov, prior_mean, prior_cov) {
     
   } else {
     
-    n <- dim(obs_data)[1]
-    
-    post_cov  <- solve(solve(prior_cov) + n * solve(obs_cov))
-    post_mean <- post_cov %*% ((solve(prior_cov) %*% prior_mean) +
-                                 (n * (solve(obs_cov) %*% colMeans(obs_data))))
-    
+    if (is.matrix(obs_data)) {
+      
+      n <- dim(obs_data)[1]
+      
+      post_cov  <- solve(solve(prior_cov) + n * solve(obs_cov))
+      post_mean <- post_cov %*% ((solve(prior_cov) %*% prior_mean) +
+                                   (n * (solve(obs_cov) %*% colMeans(obs_data))))
+      
+    } else {
+      
+      n = length(obs_data)
+      
+      post_mean = (prior_cov/(obs_cov/n + prior_cov))*mean(obs_data) + (obs_cov/(obs_cov/n + prior_cov))*prior_mean 
+      post_cov  = 1/(1/(prior_cov) + n/(obs_cov))
+      
+    }
+
   }
   
   list(mean = post_mean, cov = post_cov)
