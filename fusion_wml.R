@@ -127,7 +127,17 @@ grps_random = split(permutation, rep_len(1:n_grps_random, length(permutation)))
 # Create the groups data according to indices created before
 Y_grouped_random = lapply(grps_random, select_indices, data = Y)
 
+# Plot
 mu_Y_sample_list_random = lapply(Y_grouped_random, draw_posterior_sample, obs_cov = obs_cov_true, prior_mean = prior_mean_true, prior_cov = prior_cov_true, posterior_sample_size = post_sample_size)
+
+library(plyr)
+out_df = ldply(mu_Y_sample_list_random)
+colnames(out_df) = c("shard", "dim_1", "dim_2")
+
+library(ggplot2)
+ggplot(data = out_df)
+ggplot(data=out_df, aes(x=dim_1, y=dim_2, group = shard)) + geom_density()
+
 
 precision_list_random = lapply(mu_Y_sample_list_random, precision)
 
@@ -144,5 +154,7 @@ for (i in seq(post_sample_size)) {
   consensus_samples_random[i,] <- consensus_combine(shard_samples, shard_precisions_random)
 }
 
+out_df = as.data.frame(consensus_samples_random)
+ggplot2(out_df, aes(x,y, group = shard)) + geom_density()
 
 
