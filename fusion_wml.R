@@ -19,9 +19,9 @@ grps = split(permutation, rep_len(1:n_grps, length(permutation)))
 
 # create the data
 prior_mean_true = matrix(0, 2, 1)
-prior_cov_true  = matrix(c(1,0,0,1), 2, 2)
+prior_cov_true  = matrix(c(10,0,0,10), 2, 2)
 
-obs_cov_true = matrix(c(2,0.5,0.5,1), 2, 2)
+obs_cov_true = matrix(c(5,0.5,0.5,6), 2, 2)
 
 library(MASS)
 mu   = mvrnorm(1, prior_mean_true, prior_cov_true)
@@ -135,8 +135,8 @@ out_df = ldply(mu_Y_sample_list_random)
 colnames(out_df) = c("shard", "dim_1", "dim_2")
 
 library(ggplot2)
-ggplot(data = out_df)
-ggplot(data=out_df, aes(x=dim_1, y=dim_2, group = shard)) + geom_density()
+ggplot(data=out_df, aes(x=dim_1, y=dim_2, group = shard, col = shard)) + 
+  geom_density2d(bins = 5)
 
 
 precision_list_random = lapply(mu_Y_sample_list_random, precision)
