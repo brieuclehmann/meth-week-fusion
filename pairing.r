@@ -1,11 +1,21 @@
 points = c(1, 3, 6, 10, 15) # example 'data set'
 
+#pairwise_square_distances <- function(v){
+  
+#  v1 = matrix(v, ncol =length(v), nrow =length(v), byrow=FALSE)
+#  v2 = matrix(v, ncol =length(v), nrow =length(v), byrow=TRUE)
+#  M = (v1-v2)^2
+  
+#  return(M)
+#}
+
+
 pairwise_square_distances <- function(v){ # example 'distance matrix'
   n <- length(v)
-  M <- matrix(-1, nrow = n, ncol = n) 
+  M <- matrix(-1, nrow = n, ncol = n)
   for (i in 2:n) {
     for (j in 1:(i-1)) {
-      M[i, j] <- (v[i] - v[j])^2
+      M[i, j] <- norm(v[[i]] - v[[j]], "2")^2
     }
   }
   return(M)
