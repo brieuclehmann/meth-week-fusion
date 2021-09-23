@@ -4,6 +4,8 @@ source("combine_funcs.R")
 source("utils.R")
 source("pairing.r")
 
+library(dplyr)
+
 set.seed(1)
 
 N = 512
