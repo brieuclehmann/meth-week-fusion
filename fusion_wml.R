@@ -1,8 +1,8 @@
 # Methodology week
 rm(list=ls())
-set.seed(123)
+set.seed(124)
 
-N = 128
+N = 512
 K = 32
 
 # create a permutation over the indices
@@ -11,9 +11,10 @@ permutation = sample(N,N)
 batch_size=N/K
 
 # divide in K groups and add indices per each group
+K_random <- 4
 n_grps = K
-grps = split(permutation, rep_len(1:n_grps, length(permutation)))
-
+grps_init <- grps <- split(permutation, rep_len(1:n_grps, length(permutation)))
+grps_random <- lapply(seq(K_random), function(x) unlist(grps_init[seq(K) %% K_random == x - 1]))
 
 # create the data
 prior_mean_true = 0
@@ -45,7 +46,7 @@ source("utils.R")
 draw_posterior_sample = function(Y_sub, obs_cov, prior_mean, prior_cov, posterior_sample_size){
   
   posterior_param = normal_mean_posterior(Y_sub, obs_cov, prior_mean, prior_cov)
-  mu_Y    = rnorm(posterior_sample_size, posterior_param$mean, posterior_param$cov)
+  mu_Y    = rnorm(posterior_sample_size, posterior_param$mean, sqrt(posterior_param$cov))
   
   mu_Y 
 }
@@ -67,10 +68,14 @@ Y_grouped = lapply(grps, select_indices, data = Y)
 source("pairing.R")
 
 Levels = 3
-
+p = 100
 for (l in 1:Levels) {
   # Draw the parameters according to the groups
-  mu_Y_param_list = lapply(Y_grouped, draw_posterior_parameters_mean, obs_cov = obs_cov_true, prior_mean = prior_mean_true, prior_cov = prior_cov_true)
+  n_shards <- length(Y_grouped)
+  mu_Y_param_list = lapply(Y_grouped, draw_posterior_parameters_mean, 
+                           obs_cov = obs_cov_true, 
+                           prior_mean = prior_mean_true, 
+                           prior_cov = prior_cov_true * n_shards)
 
   # Create the distance matriY
   D = pairwise_square_distances(unlist(mu_Y_param_list))
@@ -87,44 +92,34 @@ for (l in 1:Levels) {
   
 }
 
-p = 100
-mu_Y_sample_list = lapply(Y_grouped, draw_posterior_sample, obs_cov = obs_cov_true, prior_mean = prior_mean_true, prior_cov = prior_cov_true, posterior_sample_size = p)
+mu_Y_sample_list = lapply(Y_grouped, draw_posterior_sample, 
+                          obs_cov = obs_cov_true, 
+                          prior_mean = prior_mean_true, 
+                          prior_cov = prior_cov_true * n_shards, 
+                          posterior_sample_size = p)
 
 precision = function(x){solve(var(x))}
 precision_list = lapply(mu_Y_sample_list, precision)
+shard_precisions <- array(NA, c(1,1,length(precision_list)))
+for (shard in seq_along(precision_list)) {
+  shard_precisions[ , ,shard] <- precision_list[[shard]]
+}
 
-shard_samples = matrix(unlist(mu_Y_sample_list), nrow =p, byrow=FALSE)
-
-lapply(Y_grouped, mean)
-
-
-
-
-
-
-
-
+consensus_samples <- double(p) 
+for (i in seq(p)) {
+  shard_samples <- matrix(sapply(mu_Y_sample_list, function(x) x[i]), nrow = 1)
+  consensus_samples[i] <- consensus_combine(shard_samples, shard_precisions)
+}
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+true_posterior <- normal_mean_posterior(Y, obs_cov_true, 
+                                        prior_mean_true, prior_cov_true)
+xgrid <- seq(min(consensus_samples), max(consensus_samples), length.out = 1000)
+truth <- dnorm(xgrid, true_posterior$mean, true_posterior$cov)
+plot(xgrid, truth, col = "red", type = "l")
+lines(density(consensus_samples))
 
 ##############################################
 # Random
@@ -142,6 +137,50 @@ grps = split(permutation, rep_len(1:n_grps, length(permutation)))
 
 # Create the groups data according to indices created before
 select_indices = function(grps){ Y[grps]}
-Y_grouped_random = lapply(grps, select_indices)
+Y_grouped_random = lapply(grps_random, select_indices)
 
 lapply(Y_grouped_random, mean)
+
+mu_Y_random_sample_list = lapply(Y_grouped_random, draw_posterior_sample, 
+                                 obs_cov = obs_cov_true, 
+                                 prior_mean = prior_mean_true, 
+                                 prior_cov = prior_cov_true *n_shards, 
+                                 posterior_sample_size = p)
+
+precision = function(x){solve(var(x))}
+precision_random_list = lapply(mu_Y_random_sample_list, precision)
+shard_random_precisions <- array(NA, c(1,1,length(precision_random_list)))
+for (shard in seq_along(precision_random_list)) {
+  shard_random_precisions[ , ,shard] <- precision_random_list[[shard]]
+}
+
+consensus_random_samples <- double(p) 
+for (i in seq(p)) {
+  shard_random_samples <- matrix(sapply(mu_Y_random_sample_list, function(x) x[i]), nrow = 1)
+  consensus_random_samples[i] <- consensus_combine(shard_random_samples, shard_random_precisions)
+}
+
+lines(density(consensus_random_samples), col = "blue")
+
+names(mu_Y_sample_list) <- seq_along(mu_Y_sample_list)
+names(mu_Y_random_sample_list) <- seq_along(mu_Y_random_sample_list)
+truth_df <- tibble(x = rnorm(p, true_posterior$mean, sqrt(true_posterior$cov)), 
+                   shard = '1', strategy = 'truth', type = 'full') %>%
+  bind_rows(tibble(x = consensus_samples, shard = '1', 
+                   strategy = 'merged', type = 'full')) %>%
+  bind_rows(tibble(x = consensus_random_samples, shard = '1', 
+                   strategy = 'random', type = 'full')) 
+
+merged_df <- as_tibble(mu_Y_sample_list) %>%
+  pivot_longer(seq(length(mu_Y_sample_list)), names_to = "shard", values_to = "x") %>%
+  mutate(strategy = 'merged', type = 'subposterior')
+
+random_df <- as_tibble(mu_Y_random_sample_list) %>%
+  pivot_longer(seq(length(mu_Y_random_sample_list)), names_to = "shard", values_to = "x") %>%
+  mutate(strategy = 'random', type = 'subposterior')
+
+
+out_df <- bind_rows(merged_df, random_df, truth_df)
+ggplot(out_df, aes(x, group = interaction(shard, type, strategy), linetype = type, color = strategy)) +
+  geom_density() +
+  theme_minimal()
