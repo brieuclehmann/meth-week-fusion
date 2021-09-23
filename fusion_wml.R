@@ -62,7 +62,7 @@ draw_posterior_parameters_mean = function(Y_sub, obs_cov, prior_mean, prior_cov)
 }
 
 # draw posterior samples from the whole thing
-post_sample_size = 100
+post_sample_size = 500
 mu_Y_sample_full = draw_posterior_sample(Y, obs_cov_true, prior_mean_true, prior_cov_true, post_sample_size)
   
 
@@ -104,10 +104,11 @@ names(mu_Y_sample_list) = sapply(1:length(mu_Y_sample_list), as.character)
 library(plyr)
 out_df = ldply(mu_Y_sample_list)
 colnames(out_df) = c("shard", "dim_1", "dim_2")
+out_df$type <- "balanced shards"
 
 library(ggplot2)
 plot_homog = ggplot(data=out_df, aes(x=dim_1, y=dim_2, group = shard)) + 
-  geom_density2d(size=0.5, bins =5, col = "green1")+
+  geom_density2d(size=0.5, bins =5, aes(color = type))+
   xlim(-1, 2)+
   ylim(-2.5, 3)
 
@@ -129,15 +130,20 @@ for (i in seq(post_sample_size)) {
 
 out_df_consensus = as.data.frame(consensus_samples)
 colnames(out_df_consensus) = c("dim_1", "dim_2")
+out_df_consensus$type <- "balanced shards consensus"
 plot_homog = plot_homog +
   geom_density2d(data=out_df_consensus, 
-                 size=0.5, bins =5, col = "red")
+                 aes(dim_1,dim_2, color = type),
+                 size=1, bins =5)
 
 out_df_truth = as.data.frame(mu_Y_sample_full)
 colnames(out_df_truth) = c("dim_1", "dim_2")
+out_df_truth$type <- "truth"
+
 plot_homog = plot_homog +
   geom_density2d(data=out_df_truth, 
-                 size=0.5, bins =5, col = "blue")
+                 aes(dim_1,dim_2, color = type),
+                 size=1, bins =5)
 
 
 ##############################################
@@ -162,10 +168,12 @@ mu_Y_sample_list_random = lapply(Y_grouped_random, draw_posterior_sample, obs_co
 library(plyr)
 out_df = ldply(mu_Y_sample_list_random)
 colnames(out_df) = c("random", "dim_1", "dim_2")
+out_df$type <- "random shards"
 
 library(ggplot2)
-plot_random = ggplot(data=out_df, aes(x=dim_1, y=dim_2, group = random, col = random)) + 
-  geom_density2d(size=0.5, bins =5, col = "green1")+
+plot_random = ggplot(data=out_df, 
+                     aes(x=dim_1, y=dim_2, group = random)) + 
+  geom_density2d(size=0.5, bins =5, aes(color = type))+
   xlim(-1, 2)+
   ylim(-2.5, 3)
 
@@ -188,17 +196,16 @@ for (i in seq(post_sample_size)) {
 out_df_consensus_random = as.data.frame(consensus_samples_random)
 out_df_consensus_random$random <- NA 
 colnames(out_df_consensus_random) = c("dim_1", "dim_2")
+out_df_consensus_random$type = "random consensus"
 plot_random = plot_random + 
   geom_density2d(data=out_df_consensus_random, 
-                 aes(dim_1,dim_2), inherit.aes = FALSE,
-                 size=0.5, bins =5, col = "red")
+                 aes(dim_1,dim_2, color = type), inherit.aes = FALSE,
+                 size=1, bins =5)
 
-out_df_truth = as.data.frame(mu_Y_sample_full)
-colnames(out_df_truth) = c("dim_1", "dim_2")
 plot_random = plot_random +
   geom_density2d(data=out_df_truth, 
-                 aes(dim_1,dim_2), inherit.aes = FALSE,
-                 size=0.5, bins =5, col = "blue")
+                 aes(dim_1,dim_2, color = type), inherit.aes = FALSE,
+                 size=1, bins =5)
 
 #dev.new()
 #plot_homog
@@ -227,10 +234,11 @@ names(mu_Y_sample_list_cluster) = sapply(1:length(mu_Y_sample_list_cluster), as.
 library(plyr)
 out_df = ldply(mu_Y_sample_list_cluster)
 colnames(out_df) = c("cluster", "dim_1", "dim_2")
+out_df$type <- "clustered shards"
 
 library(ggplot2)
 plot_cluster = ggplot(data=out_df, aes(x=dim_1, y=dim_2, group = cluster, col = cluster)) + 
-  geom_density2d(size=0.5, col = "green1")+
+  geom_density2d(size=0.5, aes(colour = type)) +
   xlim(-1, 2)+
   ylim(-2.5, 3)
 
@@ -251,17 +259,19 @@ for (i in seq(post_sample_size)) {
 
 out_df_consensus_cluster = as.data.frame(consensus_samples_cluster)
 colnames(out_df_consensus_cluster) = c("dim_1", "dim_2")
+out_df_consensus_cluster$type <- "clustered consensus"
 plot_cluster = plot_cluster + 
   geom_density2d(data=out_df_consensus_cluster, 
-                 aes(dim_1,dim_2), inherit.aes = FALSE,
-                 size=0.5, bins =5, col = "red")
+                 aes(dim_1,dim_2, colour = type), inherit.aes = FALSE,
+                 size=1, bins =5)
 
 out_df_truth = as.data.frame(mu_Y_sample_full)
 colnames(out_df_truth) = c("dim_1", "dim_2")
+out_df_truth$type <- "truth"
 plot_cluster = plot_cluster +
   geom_density2d(data=out_df_truth, 
-                 aes(dim_1,dim_2), inherit.aes = FALSE,
-                 size=0.5, bins =5, col = "blue")
+                 aes(dim_1,dim_2, colour = type), inherit.aes = FALSE,
+                 size=1, bins =5)
 
 
 dev.new()
