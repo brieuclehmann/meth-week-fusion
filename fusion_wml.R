@@ -61,6 +61,12 @@ draw_posterior_parameters_mean = function(Y_sub, obs_cov, prior_mean, prior_cov)
   posterior_param$mean
 }
 
+# draw posterior samples from the whole thing
+post_sample_size = 100
+mu_Y_sample_full = draw_posterior_sample(Y, obs_cov_true, prior_mean_true, prior_cov_true, post_sample_size)
+  
+
+
 # Create the groups data according to indices created before
 select_indices = function(shard, data){ data[shard,]}
 Y_grouped = lapply(shard, select_indices, data = Y)
@@ -121,6 +127,18 @@ for (i in seq(post_sample_size)) {
   consensus_samples[i,] <- consensus_combine(shard_samples, shard_precisions)
 }
 
+out_df_consensus = as.data.frame(consensus_samples)
+colnames(out_df_consensus) = c("dim_1", "dim_2")
+plot_homog = plot_homog +
+  geom_density2d(data=out_df_consensus, 
+                 size=0.5, bins =5, col = "red")
+
+out_df_truth = as.data.frame(mu_Y_sample_full)
+colnames(out_df_truth) = c("dim_1", "dim_2")
+plot_homog = plot_homog +
+  geom_density2d(data=out_df_truth, 
+                 size=0.5, bins =5, col = "blue")
+
 
 ##############################################
 # Random
@@ -166,6 +184,21 @@ for (i in seq(post_sample_size)) {
   shard_samples <- matrix(sapply(mu_Y_sample_list_random, function(x) x[i,]), nrow = dimension)
   consensus_samples_random[i,] <- consensus_combine(shard_samples, shard_precisions_random)
 }
+
+out_df_consensus_random = as.data.frame(consensus_samples_random)
+out_df_consensus_random$random <- NA 
+colnames(out_df_consensus_random) = c("dim_1", "dim_2")
+plot_random = plot_random + 
+  geom_density2d(data=out_df_consensus_random, 
+                 aes(dim_1,dim_2), inherit.aes = FALSE,
+                 size=0.5, bins =5, col = "red")
+
+out_df_truth = as.data.frame(mu_Y_sample_full)
+colnames(out_df_truth) = c("dim_1", "dim_2")
+plot_random = plot_random +
+  geom_density2d(data=out_df_truth, 
+                 aes(dim_1,dim_2), inherit.aes = FALSE,
+                 size=0.5, bins =5, col = "blue")
 
 #dev.new()
 #plot_homog
@@ -215,6 +248,21 @@ for (i in seq(post_sample_size)) {
   shard_samples <- matrix(sapply(mu_Y_sample_list_cluster, function(x) x[i,]), nrow = dimension)
   consensus_samples_cluster[i,] <- consensus_combine(shard_samples, shard_precisions_cluster)
 }
+
+out_df_consensus_cluster = as.data.frame(consensus_samples_cluster)
+colnames(out_df_consensus_cluster) = c("dim_1", "dim_2")
+plot_cluster = plot_cluster + 
+  geom_density2d(data=out_df_consensus_cluster, 
+                 aes(dim_1,dim_2), inherit.aes = FALSE,
+                 size=0.5, bins =5, col = "red")
+
+out_df_truth = as.data.frame(mu_Y_sample_full)
+colnames(out_df_truth) = c("dim_1", "dim_2")
+plot_cluster = plot_cluster +
+  geom_density2d(data=out_df_truth, 
+                 aes(dim_1,dim_2), inherit.aes = FALSE,
+                 size=0.5, bins =5, col = "blue")
+
 
 dev.new()
 plot_homog
