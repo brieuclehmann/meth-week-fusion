@@ -28,18 +28,29 @@ out_clustered <- run_experiment(X, K, clustered_shards, prior_params,
 
 
 ### EXTRACT OUTPUT ###
+
+true_posterior_params <- post_update(X, prior_params, 1)
+true_post_samples <- post_sampler(500, true_posterior_params)
+truth_df <- as_tibble(true_post_samples) %>%
+  mutate(type = "full", shard = "1", strategy = "truth")
+
 extract_output <- function(x, name) {
   p <- ncol(x$approx_samples)
   approx_df <- as_tibble(x$approx_samples) %>%
-    mutate(type = "full", shard = NA, strategy = name)
-  shard_df <- plyr::ldply(out_random$shard_samples, as_tibble, .id = "shard") %>%
-    mutate(type = "sub_posterior", strategy = name)
+    mutate(type = "full", shard = "1", strategy = name)
+  shard_df <- plyr::ldply(x$shard_samples, as_tibble) %>%
+    mutate(type = "sub_posterior", strategy = name) %>%
+    rename(shard = .id)
   
   bind_rows(approx_df, shard_df)
 }
 
 out_df <- bind_rows(extract_output(out_random, "random"),
                     extract_output(out_balanced, "balanced"), 
-                    extract_output(out_clustered, "clustered"))
+                    extract_output(out_clustered, "clustered"),
+                    truth_df)
 
-
+ggplot(out_df, aes(V1, V2, color = strategy, 
+                   group = interaction(strategy, type, shard),
+                   linetype = type)) +
+  geom_density2d()
