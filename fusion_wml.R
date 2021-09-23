@@ -243,6 +243,7 @@ out_df = ldply(mu_Y_sample_list_cluster)
 colnames(out_df) = c("cluster", "dim_1", "dim_2")
 out_df$type <- "clustered shards"
 
+
 library(ggplot2)
 plot_cluster = ggplot(data=out_df, aes(x=dim_1, y=dim_2, group = cluster, col = cluster)) + 
   geom_density2d(size=0.5, aes(colour = type)) +
