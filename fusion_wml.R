@@ -162,9 +162,11 @@ for (i in seq(p)) {
 
 lines(density(consensus_random_samples), col = "blue")
 
+true_samples <- rnorm(p, true_posterior$mean, sqrt(true_posterior$cov))
+
 names(mu_Y_sample_list) <- seq_along(mu_Y_sample_list)
 names(mu_Y_random_sample_list) <- seq_along(mu_Y_random_sample_list)
-truth_df <- tibble(x = rnorm(p, true_posterior$mean, sqrt(true_posterior$cov)), 
+truth_df <- tibble(x = true_samples), 
                    shard = '1', strategy = 'truth', type = 'full') %>%
   bind_rows(tibble(x = consensus_samples, shard = '1', 
                    strategy = 'merged', type = 'full')) %>%
