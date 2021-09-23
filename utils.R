@@ -49,3 +49,22 @@ consensus_combine <- function(shard_samples, shard_vars) {
   sum_weighted_samples <- rowSums(weighted_samples)
   solve(total_var) %*% sum_weighted_samples
 }
+
+
+accuracy <- function(approx_samples, target_samples) {
+  range.x <- range(c(approx_samples, target_samples))
+  h_approx <- KernSmooth::dpik(approx_samples)
+  approx_density <- KernSmooth::bkde(approx_samples, 
+                                     bandwidth = h_approx,
+                                     range.x = range.x)
+  
+  h_target <- KernSmooth::dpik(target_samples)
+  target_density <- KernSmooth::bkde(target_samples,
+                                     bandwidth = h_target,
+                                     range.x = range.x)
+  
+  f <- approxfun(target_density$x, abs(target_density$y - approx_density$y))
+  1 - 0.5 * integrate(f, range.x[1], range.x[2])$value
+  
+}
+
