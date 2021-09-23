@@ -1,6 +1,6 @@
 # Methodology week
 rm(list=ls())
-set.seed(124)
+set.seed(123)
 
 N = 512
 K = 32
@@ -111,9 +111,8 @@ out_df$type <- "balanced shards"
 
 library(ggplot2)
 plot_homog = ggplot(data=out_df, aes(x=dim_1, y=dim_2, group = shard)) + 
-  geom_density2d(size=0.5, bins =5, aes(color = type))+
-  xlim(-1, 2)+
-  ylim(-2.5, 3)
+  geom_density2d(size=0.5, bins =5, color = "green2")
+
 
 precision = function(x){solve(var(x))}
 precision_list = lapply(mu_Y_sample_list, precision)
@@ -180,9 +179,7 @@ out_df$type <- "random shards"
 library(ggplot2)
 plot_random = ggplot(data=out_df, 
                      aes(x=dim_1, y=dim_2, group = random)) + 
-  geom_density2d(size=0.5, bins =5, aes(color = type))+
-  xlim(-1, 2)+
-  ylim(-2.5, 3)
+  geom_density2d(size=0.5, bins =5, aes(color = type))
 
 
 precision_list_random = lapply(mu_Y_sample_list_random, precision)
@@ -246,9 +243,7 @@ out_df$type <- "clustered shards"
 
 library(ggplot2)
 plot_cluster = ggplot(data=out_df, aes(x=dim_1, y=dim_2, group = cluster, col = cluster)) + 
-  geom_density2d(size=0.5, aes(colour = type)) +
-  xlim(-1, 2)+
-  ylim(-2.5, 3)
+  geom_density2d(size=0.5, aes(colour = type)) 
 
 precision_list_cluster = lapply(mu_Y_sample_list_cluster, precision)
 
