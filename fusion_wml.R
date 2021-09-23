@@ -1,8 +1,8 @@
 # Methodology week
 rm(list=ls())
-set.seed(123)
+set.seed(124)
 
-N = 128
+N = 512
 K = 32
 
 dimension = 2
@@ -15,7 +15,6 @@ batch_size=N/K
 # divide in K groups and add indices per each group
 n_shard = K
 shard = split(permutation, rep_len(1:n_shard, length(permutation)), drop =T)
-
 
 # create the data
 prior_mean_true = matrix(0, 2, 1)
@@ -76,10 +75,14 @@ Y_grouped = lapply(shard, select_indices, data = Y)
 source("pairing.R")
 
 Levels = 3
-
+p = 100
 for (l in 1:Levels) {
   # Draw the parameters according to the groups
-  mu_Y_param_list = lapply(Y_grouped, draw_posterior_parameters_mean, obs_cov = obs_cov_true, prior_mean = prior_mean_true, prior_cov = prior_cov_true)
+  n_shards <- length(Y_grouped)
+  mu_Y_param_list = lapply(Y_grouped, draw_posterior_parameters_mean, 
+                           obs_cov = obs_cov_true, 
+                           prior_mean = prior_mean_true, 
+                           prior_cov = prior_cov_true * n_shards)
 
   # Create the distance matriY
   D = pairwise_square_distances(mu_Y_param_list)
@@ -114,6 +117,10 @@ plot_homog = ggplot(data=out_df, aes(x=dim_1, y=dim_2, group = shard)) +
 
 precision = function(x){solve(var(x))}
 precision_list = lapply(mu_Y_sample_list, precision)
+shard_precisions <- array(NA, c(1,1,length(precision_list)))
+for (shard in seq_along(precision_list)) {
+  shard_precisions[ , ,shard] <- precision_list[[shard]]
+}
 
 shard_samples = matrix(unlist(mu_Y_sample_list), nrow =post_sample_size, byrow=FALSE)
 
@@ -280,5 +287,3 @@ dev.new()
 plot_random
 dev.new()
 plot_cluster
-
-
