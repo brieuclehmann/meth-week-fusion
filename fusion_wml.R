@@ -19,9 +19,9 @@ shard = split(permutation, rep_len(1:n_shard, length(permutation)), drop =T)
 
 # create the data
 prior_mean_true = matrix(0, 2, 1)
-prior_cov_true  = matrix(c(10,0,0,10), 2, 2)
+prior_cov_true  = matrix(c(1,0,0,1), 2, 2)
 
-obs_cov_true = matrix(c(5,0.5,0.5,6), 2, 2)
+obs_cov_true = matrix(c(1,0.5,0.5,2), 2, 2)
 
 library(MASS)
 mu   = mvrnorm(1, prior_mean_true, prior_cov_true)
@@ -100,10 +100,10 @@ out_df = ldply(mu_Y_sample_list)
 colnames(out_df) = c("shard", "dim_1", "dim_2")
 
 library(ggplot2)
-plot_homog = ggplot(data=out_df, aes(x=dim_1, y=dim_2, group = shard, col = shard)) + 
-  geom_density2d(size=0.5, bins =5)+
-  xlim(-1, 5)+
-  ylim(-3, 5)
+plot_homog = ggplot(data=out_df, aes(x=dim_1, y=dim_2, group = shard)) + 
+  geom_density2d(size=0.5, bins =5, col = "green1")+
+  xlim(-1, 2)+
+  ylim(-2.5, 3)
 
 precision = function(x){solve(var(x))}
 precision_list = lapply(mu_Y_sample_list, precision)
@@ -147,9 +147,9 @@ colnames(out_df) = c("random", "dim_1", "dim_2")
 
 library(ggplot2)
 plot_random = ggplot(data=out_df, aes(x=dim_1, y=dim_2, group = random, col = random)) + 
-  geom_density2d(size=0.5, bins =5)+
-  xlim(-1, 5)+
-  ylim(-3, 5)
+  geom_density2d(size=0.5, bins =5, col = "green1")+
+  xlim(-1, 2)+
+  ylim(-2.5, 3)
 
 
 precision_list_random = lapply(mu_Y_sample_list_random, precision)
@@ -197,9 +197,9 @@ colnames(out_df) = c("cluster", "dim_1", "dim_2")
 
 library(ggplot2)
 plot_cluster = ggplot(data=out_df, aes(x=dim_1, y=dim_2, group = cluster, col = cluster)) + 
-  geom_density2d(size=0.5, bins =5)+
-  xlim(-1, 5)+
-  ylim(-3, 5)
+  geom_density2d(size=0.5, col = "green1")+
+  xlim(-1, 2)+
+  ylim(-2.5, 3)
 
 precision_list_cluster = lapply(mu_Y_sample_list_cluster, precision)
 
