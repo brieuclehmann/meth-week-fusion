@@ -1,3 +1,9 @@
+source("experiment_wrapper.R")
+source("sharding_funcs.R")
+source("combine_funcs.R")
+source("utils.R")
+source("pairing.r")
+
 set.seed(1)
 
 N = 512
