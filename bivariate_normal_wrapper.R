@@ -18,7 +18,7 @@ mu   <- MASS::mvrnorm(1, prior_params$mean, prior_params$cov)
 X    <- MASS::mvrnorm(N, mu, obs_cov)
 
 post_update <- function(y, prior_params, n_shard) {
-  normal_mean_posterior(y, obs_cov, prior_params$mean, prior_params$cov * n_shard)
+ normal_mean_posterior(y, obs_cov, prior_params$mean, prior_params$cov * n_shard)
 }
 
 post_sampler <- function(M, params) {
@@ -27,7 +27,7 @@ post_sampler <- function(M, params) {
 
 out_random <- run_experiment(X, K, random_shards, prior_params, 
                              post_update, post_sampler, consensus_combine_wrapper)
-
+                      
 out_balanced <- run_experiment(X, K, balanced_shards, prior_params, 
                                post_update, post_sampler, consensus_combine_wrapper)
 
@@ -85,7 +85,9 @@ dev.new()
 out_df <- bind_rows(extract_output(out_clustered, "clustered"),
                     truth_df)
 
-ggplot(out_df, aes(V1, V2, color = strategy, 
-                   group = interaction(strategy, type, shard),
-                   linetype = type)) +
+results_df %>% 
+  filter(sim == 1) %>%
+  ggplot(aes(V1, V2, color = strategy, 
+             group = interaction(strategy, type, shard),
+             linetype = type)) +
   geom_density2d()
