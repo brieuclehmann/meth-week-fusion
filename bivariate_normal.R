@@ -6,7 +6,7 @@ source("pairing.r")
 library(ggplot2)
 library(dplyr)
 
-set.seed(6)
+set.seed(10)
 
 N = 512
 K = 4
@@ -38,7 +38,7 @@ out_clustered <- run_experiment(X, K, clustered_shards, prior_params,
 ### EXTRACT OUTPUT ###
 
 true_posterior_params <- post_update(X, prior_params, 1)
-true_post_samples <- post_sampler(10000, true_posterior_params)
+true_post_samples <- post_sampler(1000, true_posterior_params)
 truth_df <- as_tibble(true_post_samples) %>%
   mutate(type = "full", shard = "1", strategy = "truth")
 
