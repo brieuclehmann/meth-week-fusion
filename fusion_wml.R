@@ -61,7 +61,7 @@ draw_posterior_parameters_mean = function(Y_sub, obs_cov, prior_mean, prior_cov)
 }
 
 # draw posterior samples from the whole thing
-post_sample_size = 500
+post_sample_size = 10000
 mu_Y_sample_full = draw_posterior_sample(Y, obs_cov_true, prior_mean_true, prior_cov_true, post_sample_size)
   
 
