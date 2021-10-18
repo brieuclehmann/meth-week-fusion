@@ -1,4 +1,7 @@
+source()
+
 N = 512
+
 K = 4
 
 prior_params <- list(mean = 0, cov = 1)

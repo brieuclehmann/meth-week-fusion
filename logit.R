@@ -252,7 +252,7 @@ plot_random = plot_random +
                  size=1, bins =5)
 
 dev.new()
-plot_homog
+is plot_homog
 #dev.new()
 #plot_random
 
