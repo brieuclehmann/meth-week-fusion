@@ -7,7 +7,7 @@ source("pairing.r")
 library(dplyr)
 library(ggplot2)
 
-set.seed(1)
+set.seed(11)
 
 N = 512
 K = 4

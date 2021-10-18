@@ -19,58 +19,52 @@ extract_output <- function(x, name) {
   shard_df <- plyr::ldply(x$shard_samples, as_tibble) %>%
     mutate(type = "sub_posterior", strategy = name, 
            sample = rep(seq(M), n_shard)) %>%
-    rename(shard = .id, V1 = value)
+    rename(shard = .id)
   
   bind_rows(approx_df, shard_df)
 }
 
 set.seed(1)
 
-gamma_post_update <- function(y, prior_params, prior_scale) {
-  
-  n <- length(y)
-  # scale the prior to ensure the right combination
-  post_shape <- sum(y) + prior_params['shape']
-  post_rate  <- n + prior_params['rate']
-  
-  c(post_shape, post_rate)
+N = 512
+K = 4
+
+prior_params <- list(mean = c(0, 0), cov = diag(2))
+obs_cov <- diag(2)
+
+post_update <- function(y, prior_params, n_shard) {
+  normal_mean_posterior(y, obs_cov, prior_params$mean, prior_params$cov * n_shard)
 }
 
-# Support function to draw posterior samples using lapply
-gamma_post_sampler = function(M, params) {
-  rgamma(M, shape = params['shape'], rate = params['rate'])
+post_sampler <- function(M, params) {
+  MASS::mvrnorm(M, params$mean, params$cov)
 }
 
-# create the data
-prior_params <- c(shape = 10, rate  = 1)
-N <- 512
-n_sim <- 20
+n_sim <- 10
 M <- 500
-K <- 4
 results_df <- tibble()
 for (sim in 1:n_sim) {
   set.seed(sim)
   
-  lambda <- rgamma(1, shape = prior_params['shape'], rate = prior_params['rate'])
-  y      <- rpois(N, lambda)
+  mu   <- MASS::mvrnorm(1, prior_params$mean, prior_params$cov)
+  X    <- MASS::mvrnorm(N, mu, obs_cov)
   
-  out_random <- run_experiment(y, K, random_shards, prior_params, 
-                               gamma_post_update, gamma_post_sampler, 
+  out_random <- run_experiment(X, K, random_shards, prior_params, 
+                               post_update, post_sampler, 
                                consensus_combine_wrapper, M)
   
-  out_balanced <- run_experiment(y, K, balanced_shards, prior_params, 
-                                 gamma_post_update, gamma_post_sampler,
+  out_balanced <- run_experiment(X, K, balanced_shards, prior_params, 
+                                 post_update, post_sampler,
                                  consensus_combine_wrapper, M)
   
-  out_clustered <- run_experiment(y, K, clustered_shards, prior_params, 
-                                  gamma_post_update, gamma_post_sampler,
+  out_clustered <- run_experiment(X, K, clustered_shards, prior_params, 
+                                  post_update, post_sampler,
                                   consensus_combine_wrapper, M)
   
-  true_posterior_params <- gamma_post_update(y, prior_params, 1)
-  true_post_samples <- gamma_post_sampler(M, true_posterior_params)
+  true_posterior_params <- post_update(X, prior_params, 1)
+  true_post_samples <- post_sampler(M, true_posterior_params)
   truth_df <- as_tibble(true_post_samples) %>%
-    mutate(type = "full", shard = "1", strategy = "truth", sample = seq(M)) %>%
-    rename(V1 = 1)
+    mutate(type = "full", shard = "1", strategy = "truth", sample = seq(M))
   
   out_df <- bind_rows(extract_output(out_random, "random"),
                       extract_output(out_balanced, "HeMP"), 
@@ -81,28 +75,29 @@ for (sim in 1:n_sim) {
   results_df <- bind_rows(results_df, out_df)
 }
 
-
 true_df <- results_df %>%
   filter(strategy == "truth") %>%
-  select(true_V1 = V1, sim, sample)
+  select(true_V1 = V1, true_V2 = V2, sim, sample)
 accuracy_df <- results_df %>%
-  filter(type == "full" & !strategy %in% c("truth", "clustered")) %>%
+  filter(type == "full" & strategy != "truth") %>%
   left_join(true_df, by = c("sim", "sample")) %>%
   group_by(strategy, sim) %>%
-  summarise(V1_accuracy = accuracy(V1, true_V1), .groups = "drop")
+  summarise(V1_accuracy = accuracy(V1, true_V1),
+            V2_accuracy = accuracy(V2, true_V2), .groups = "drop")
 
 table_df <- accuracy_df %>%
-  pivot_longer(V1_accuracy, names_to = "parameter") %>%
+  pivot_longer(c(V1_accuracy, V2_accuracy), names_to = "parameter") %>%
   group_by(parameter, strategy) %>%
   summarise(min = min(value), mean = mean(value), max = max(value))
 
 print(xtable(table_df))
+### PLOT OUTPUT ###
 
 results_df %>% 
   filter(sim == 1 & strategy != "clustered") %>%
-  ggplot(aes(V1, color = strategy, 
+  ggplot(aes(V1, V2, color = strategy, 
              group = interaction(strategy, type, shard),
              linetype = type)) +
-  geom_density() +
+  geom_density2d() +
   theme_minimal() +
-  xlab("theta")
+  xlab("mu1") + ylab("mu2")
