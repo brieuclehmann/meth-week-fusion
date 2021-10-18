@@ -59,7 +59,12 @@ balanced_shards <- function(y, n_shard, prior_params, posterior_update,
       shard_samples[[i]] <- posterior_sampler(M, posterior_params[[i]])
     }
     
-    posterior_means <- lapply(shard_samples, rowMeans)
+    if (is.vector(shard_samples[[1]])) {
+      posterior_means <- lapply(shard_samples, mean)
+    } else {
+      posterior_means <- lapply(shard_samples, rowMeans)
+    }
+    
     # Create the distance matrix
     D <- pairwise_square_distances(posterior_means)
     # Choose the pairs to merge

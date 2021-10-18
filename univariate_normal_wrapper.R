@@ -6,6 +6,8 @@ source("pairing.r")
 
 library(ggplot2)
 library(dplyr)
+library(tidyr)
+library(xtable)
 
 extract_output <- function(x, name) {
   M <- nrow(x$approx_samples)
@@ -25,9 +27,10 @@ set.seed(1)
 
 N = 512
 K = 4
+p <- 1
 
-prior_params <- list(mean = c(0, 0), cov = diag(2))
-obs_cov <- diag(2)
+prior_params <- list(mean = rep(0, p), cov = diag(p))
+obs_cov <- diag(p)
 
 post_update <- function(y, prior_params, n_shard) {
   normal_mean_posterior(y, obs_cov, prior_params$mean, prior_params$cov * n_shard)
@@ -37,7 +40,7 @@ post_sampler <- function(M, params) {
   MASS::mvrnorm(M, params$mean, params$cov)
 }
 
-n_sim <- 10
+n_sim <- 20
 M <- 500
 results_df <- tibble()
 for (sim in 1:n_sim) {
@@ -74,16 +77,15 @@ for (sim in 1:n_sim) {
 
 true_df <- results_df %>%
   filter(strategy == "truth") %>%
-  select(true_V1 = V1, true_V2 = V2, sim, sample)
+  select(true_V1 = V1, sim, sample)
 accuracy_df <- results_df %>%
   filter(type == "full" & strategy != "truth") %>%
   left_join(true_df, by = c("sim", "sample")) %>%
   group_by(strategy, sim) %>%
-  summarise(V1_accuracy = accuracy(V1, true_V1),
-            V2_accuracy = accuracy(V2, true_V2), .groups = "drop")
+  summarise(V1_accuracy = accuracy(V1, true_V1), .groups = "drop")
 
 table_df <- accuracy_df %>%
-  pivot_longer(c(V1_accuracy, V2_accuracy), names_to = "parameter") %>%
+  pivot_longer(c(V1_accuracy), names_to = "parameter") %>%
   group_by(parameter, strategy) %>%
   summarise(min = min(value), mean = mean(value), max = max(value))
 
@@ -92,9 +94,9 @@ print(xtable(table_df))
 
 results_df %>% 
   filter(sim == 1 & strategy != "clustered") %>%
-  ggplot(aes(V1, V2, color = strategy, 
+  ggplot(aes(V1, color = strategy, 
              group = interaction(strategy, type, shard),
              linetype = type)) +
-  geom_density2d() +
+  geom_density() +
   theme_minimal() +
-  xlab("mu1") + ylab("mu2")
+  xlab("mu")

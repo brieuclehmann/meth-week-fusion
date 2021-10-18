@@ -25,9 +25,10 @@ set.seed(1)
 
 N = 512
 K = 4
+p <- 1
 
-prior_params <- list(mean = c(0, 0), cov = diag(2))
-obs_cov <- diag(2)
+prior_params <- list(mean = rep(0, p), cov = diag(p))
+obs_cov <- diag(p)
 
 post_update <- function(y, prior_params, n_shard) {
   normal_mean_posterior(y, obs_cov, prior_params$mean, prior_params$cov * n_shard)
@@ -37,7 +38,7 @@ post_sampler <- function(M, params) {
   MASS::mvrnorm(M, params$mean, params$cov)
 }
 
-n_sim <- 10
+n_sim <- 20
 M <- 500
 results_df <- tibble()
 for (sim in 1:n_sim) {
@@ -64,7 +65,7 @@ for (sim in 1:n_sim) {
     mutate(type = "full", shard = "1", strategy = "truth", sample = seq(M))
   
   out_df <- bind_rows(extract_output(out_random, "random"),
-                      extract_output(out_balanced, "HeMP"), 
+                      extract_output(out_balanced, "balanced"), 
                       extract_output(out_clustered, "clustered"),
                       truth_df) %>%
     mutate(sim = sim)
@@ -82,19 +83,16 @@ accuracy_df <- results_df %>%
   summarise(V1_accuracy = accuracy(V1, true_V1),
             V2_accuracy = accuracy(V2, true_V2), .groups = "drop")
 
-table_df <- accuracy_df %>%
+accuracy_df %>%
   pivot_longer(c(V1_accuracy, V2_accuracy), names_to = "parameter") %>%
   group_by(parameter, strategy) %>%
   summarise(min = min(value), mean = mean(value), max = max(value))
 
-print(xtable(table_df))
 ### PLOT OUTPUT ###
 
 results_df %>% 
-  filter(sim == 1 & strategy != "clustered") %>%
+  filter(sim == 1) %>%
   ggplot(aes(V1, V2, color = strategy, 
              group = interaction(strategy, type, shard),
              linetype = type)) +
-  geom_density2d() +
-  theme_minimal() +
-  xlab("mu1") + ylab("mu2")
+  geom_density2d()
