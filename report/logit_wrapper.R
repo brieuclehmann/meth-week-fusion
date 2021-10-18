@@ -116,4 +116,4 @@ results_df %>%
              linetype = type)) +
   geom_density2d() +
   theme_minimal() +
-  xlab("mu1") + ylab("mu2")
+  xlab("beta1") + ylab("beta2")
